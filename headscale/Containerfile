@@ -1,0 +1,13 @@
+FROM us.kheeper.com/bootc/server:45
+
+ARG VERSION=0.29.7
+ARG SHA256=e827fc9b12d958bc95b081c4401dd63f8e0471d025b45b508535a920532150a8
+RUN curl -fsSLo /usr/bin/headscale https://github.com/juanfont/headscale/releases/download/v${VERSION}/headscale_${VERSION}_linux_amd64 \
+	&& echo "${SHA256}  /usr/bin/headscale" | sha256sum -c \
+	&& chmod 0755 /usr/bin/headscale
+
+COPY headscale.service /usr/lib/systemd/system/headscale.service
+COPY headscale.nft /usr/lib/nftables/server.d/headscale.nft
+RUN systemctl enable headscale
+
+RUN bootc container lint

@@ -1,0 +1,2 @@
+add element inet server tcp_ports { 80, 443 }
+add element inet server udp_ports { 3478 }

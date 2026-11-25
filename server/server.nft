@@ -1,0 +1,26 @@
+table inet server
+delete table inet server
+
+table inet server {
+	set tcp_ports {
+		type inet_service
+		elements = { 22 }
+	}
+
+	set udp_ports {
+		type inet_service
+	}
+
+	chain input {
+		type filter hook input priority filter; policy drop;
+		ct state vmap { established : accept, related : accept, invalid : drop }
+		iif lo accept
+		iifname "podman*" accept
+		meta l4proto { icmp, ipv6-icmp } accept
+		ip6 saddr fe80::/10 udp dport 546 accept
+		tcp dport @tcp_ports accept
+		udp dport @udp_ports accept
+	}
+}
+
+include "/usr/lib/nftables/server.d/*.nft"

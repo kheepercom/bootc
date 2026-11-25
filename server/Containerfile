@@ -1,0 +1,17 @@
+FROM quay.io/fedora/fedora-bootc:45 AS builder
+RUN /usr/libexec/bootc-base-imagectl build-rootfs --manifest=minimal-plus \
+	--install chrony --install iputils /target-rootfs
+
+FROM scratch
+COPY --from=builder /target-rootfs/ /
+LABEL containers.bootc=1 ostree.bootable=1
+ENV container=oci
+STOPSIGNAL SIGRTMIN+3
+CMD ["/sbin/init"]
+
+COPY server.nft /usr/lib/nftables/server.nft
+COPY nftables.conf /usr/lib/systemd/system/nftables.service.d/server.conf
+RUN mkdir /usr/lib/nftables/server.d \
+	&& systemctl enable nftables bootc-fetch-apply-updates.timer
+
+RUN bootc container lint
