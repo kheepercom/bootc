@@ -6,7 +6,7 @@
 
 `us.kheeper.com/bootc/headscale` and `eu.kheeper.com/bootc/headscale`, rebuilt when Fedora or headscale changes:
 
-- `:0.29` follows headscale patch releases. Recommended.
+- `:0.29` follows headscale patch releases.
 - `:0` also follows minor releases, which may change the config or migrate the database.
 - `:0.29.7` stays on that release but still gets OS updates until the next one.
 - `:0.29.7-YYYYMMDD` never changes.
@@ -27,6 +27,28 @@ COPY config.yaml /etc/headscale/config.yaml
 ```
 
 Start from upstream's [config-example.yaml](https://github.com/juanfont/headscale/blob/v0.29.7/config-example.yaml) and set at least `server_url`, `listen_addr: 0.0.0.0:443` and either `tls_letsencrypt_hostname` or `tls_cert_path`/`tls_key_path`.
+
+## Alternative Quick Start
+
+As a quicker alternative to deriving an image, you can use a special image name to inject an admin user with your GitHub authorized_keys: `us.kheeper.com/bootc/gh/<user>/headscale:0`.
+
+That injects the keys from `https://github.com/<user>.keys` into the image on pull.
+The image can be pulled without credentials.
+
+Generate a script from https://kheeper.com/bootc-quickstart to launch on GCP, AWS or bare metal.
+For example, GitHub user "mandi-bt" launching an instance on GCP would look like this.
+
+```sh
+gcloud compute instances create my-headscale-server \
+  --image-project kheeper --image-family bootc-quickstart \
+  --machine-type c4-standard-2 \
+  --boot-disk-size 20GB \
+  --metadata 'bootc-image=us.kheeper.com/bootc/gh/mandi-bt/headscale:0'
+```
+
+You'll also need to add firewall-rules and tags to allow ports 80, 443 and 3478/udp.
+
+Then you can `ssh admin@<IP>`, write /etc/headscale/config.yaml, run `sudo systemctl start headscale`, and add users and nodes with `sudo headscale`.
 
 ## Notes
 

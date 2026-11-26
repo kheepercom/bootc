@@ -25,8 +25,28 @@ NetworkManager, sshd, chronyd and nftables are enabled.
 
 **You can't log in yet.** There are no users and root is locked.
 
-Follow the steps in our [derive repo](https://github.com/kheepercom/derive) to add a login user and launch.
+Follow the steps in our [derive repo](https://github.com/kheepercom/derive) to add a login user and launch or follow the quick start below.
 
+## Quick Start
+
+As a quicker alternative to deriving an image, you can use a special image name to inject an admin user with your GitHub authorized_keys.
+`us.kheeper.com/bootc/gh/<user>/server:45`
+
+That injects the keys from `https://github.com/<user>.keys` into the image on pull.
+The image can be pulled without credentials.
+
+Generate a script from https://kheeper.com/bootc-quickstart to launch on GCP, AWS or bare metal.
+For example, GitHub user "mandi-bt" launching an instance on GCP would look like this.
+
+```sh
+gcloud compute instances create my-server \
+  --image-project kheeper --image-family bootc-quickstart \
+  --machine-type c4-standard-2 \
+  --boot-disk-size 20GB \
+  --metadata 'bootc-image=us.kheeper.com/bootc/gh/mandi-bt/server:45'
+```
+
+Then you can `ssh admin@<IP>`.
 
 ## Firewall
 
