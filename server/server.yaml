@@ -1,0 +1,15 @@
+# minimal-plus without rpm-ostree, zram-generator, fwupd, kmscon, iptables-nft and criu.
+include:
+  - minimal/manifest.yaml
+
+variables:
+  distro: "fedora"
+
+packages:
+  - fedora-repos-archive systemd-resolved
+  - attr bash-completion hostname iproute jq less vim-minimal
+  - podman skopeo crun
+  - cryptsetup lvm2 tar
+  - NetworkManager openssh-clients openssh-server
+  - linux-firmware polkit sudo tzdata nss-altfiles
+  - chrony iputils

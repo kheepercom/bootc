@@ -1,25 +1,22 @@
 # server
 
 This is the smallest server image we could design that boots on cloud instances and bare metal servers while also being suitable as a base for building your own images.
-It's rebuilt nightly from Fedora 45's `minimal-plus` manifest, the shared base of Fedora IoT, Atomic Desktops and CoreOS.
+It's rebuilt nightly from Fedora 45's `minimal-plus` manifest, the shared base of Fedora IoT, Atomic Desktops and CoreOS, minus rpm-ostree, zram-generator, fwupd, kmscon, iptables-nft and criu (see `server.yaml`).
 We add chrony, iputils, and a default-deny firewall with nftables.
-(Firewalld was intentionally left out because it requires python).
-
-## Release
-
-`us.kheeper.com/bootc/server:45` and `eu.kheeper.com/bootc/server:45`
 
 ## Contents
 
-- kernel, systemd, bootc, bootupd, ostree, rpm-ostree, dnf5
+`us.kheeper.com/bootc/server:45` and `eu.kheeper.com/bootc/server:45`
+
+- kernel, systemd, bootc, bootupd, ostree, dnf5
 - SELinux: `selinux-policy-targeted`, `container-selinux`
 - Networking: NetworkManager, systemd-resolved, iproute, nftables, iputils
 - SSH: openssh-server, openssh-clients
 - Access: sudo, polkit
-- Containers: podman, skopeo, crun, criu
+- Containers: podman, skopeo, crun
 - Storage: cryptsetup, lvm2
-- Hardware: linux-firmware, fwupd, tpm2-tools, zram-generator
-- chrony, kmscon (console)
+- Hardware: linux-firmware, tpm2-tools
+- chrony
 - Shell tools: vim-minimal, less, tar
 
 NetworkManager, sshd, chronyd and nftables are enabled.
@@ -52,6 +49,6 @@ UDP ports go in `udp_ports`.
 This is not a general-purpose operating system.
 You can add additional packages in your derived images or start from these instead:
 
-[`quay.io/fedora/fedora-iot:45`](https://quay.io/repository/fedora/fedora-iot) is Fedora's official IoT bootc image, built on the same `minimal-plus` set. It adds firewalld, greenboot (health checks after an upgrade, with automatic rollback), ignition (first-boot provisioning), clevis with TPM2 (automatic LUKS unlock), FDO onboarding, usbguard, and Wi-Fi and WWAN support.
+[`quay.io/fedora/fedora-iot:45`](https://quay.io/repository/fedora/fedora-iot) is Fedora's official IoT bootc image, built on the `minimal-plus` set. It adds firewalld, greenboot (health checks after an upgrade, with automatic rollback), ignition (first-boot provisioning), clevis with TPM2 (automatic LUKS unlock), FDO onboarding, usbguard, and Wi-Fi and WWAN support.
 
 [`quay.io/fedora/fedora-bootc:45`](https://quay.io/repository/fedora/fedora-bootc) is the standard image: a general-purpose base, roughly a headless server install, with automatic updates on.
