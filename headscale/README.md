@@ -6,14 +6,20 @@ The firewall opens 80/tcp (Let's Encrypt HTTP-01), 443/tcp and 3478/udp (embedde
 
 ## Release
 
-`us.kheeper.com/bootc/headscale:0.29.7` and `eu.kheeper.com/bootc/headscale:0.29.7`.
+`us.kheeper.com/bootc/headscale` and `eu.kheeper.com/bootc/headscale`, rebuilt when Fedora or headscale changes:
+
+- `:0.29` follows headscale patch releases. Recommended.
+- `:0` also follows minor releases, which may change the config or migrate the database.
+- `:0.29.7` stays on that release but still gets OS updates until the next one.
+- `:0.29.7-YYYYMMDD` never changes.
 
 ## Configure
 
 Headscale starts once `/etc/headscale/config.yaml` exists. Derive with your config and an SSH key:
 
 ```Containerfile
-FROM us.kheeper.com/bootc/headscale:0.29.7
+FROM us.kheeper.com/bootc/headscale:0.29
+
 COPY config.yaml /etc/headscale/config.yaml
 COPY root.keys /usr/ssh/root.keys
 RUN echo 'AuthorizedKeysFile /usr/ssh/%u.keys .ssh/authorized_keys' > /etc/ssh/sshd_config.d/30-auth-system.conf
