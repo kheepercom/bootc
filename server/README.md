@@ -3,7 +3,7 @@
 This is the smallest server image we could design that boots on cloud instances and bare metal servers while also being suitable as a base for building your own images.
 It's rebuilt nightly from Fedora 45's `minimal-plus` manifest, the shared base of Fedora IoT, Atomic Desktops and CoreOS.
 We add chrony, iputils, and a default-deny firewall with nftables.
-(Firewalld with its requirement for python was intentionally left out).
+(Firewalld was intentionally left out because it requires python).
 
 ## Release
 
@@ -17,23 +17,19 @@ We add chrony, iputils, and a default-deny firewall with nftables.
 - SSH: openssh-server, openssh-clients
 - Access: sudo, polkit
 - Containers: podman, skopeo, crun, criu
-- Storage: cryptsetup, lvm2, tar
+- Storage: cryptsetup, lvm2
 - Hardware: linux-firmware, fwupd, tpm2-tools, zram-generator
 - chrony, kmscon (console)
+- Shell tools: vim-minimal, less, tar
 
 NetworkManager, sshd, chronyd and nftables are enabled.
 
 ## Derive
 
-**You can't log in yet.** There are no users and root is locked. Derive from it to add a login and your application.
+**You can't log in yet.** There are no users and root is locked.
 
-```Containerfile
-FROM us.kheeper.com/bootc/server:45
+Follow the steps in our [derive repo](https://github.com/kheepercom/derive) to add a login user and launch.
 
-RUN dnf install -y postgresql-server
-```
-
-Refer to [sibling directories](https://github.com/kheepercom/bootc/tree/main/headscale) for more examples.
 
 ## Firewall
 
@@ -54,6 +50,7 @@ UDP ports go in `udp_ports`.
 ## Need more?
 
 This is not a general-purpose operating system.
+You can add additional packages in your derived images or start from these instead:
 
 [`quay.io/fedora/fedora-iot:45`](https://quay.io/repository/fedora/fedora-iot) is Fedora's official IoT bootc image, built on the same `minimal-plus` set. It adds firewalld, greenboot (health checks after an upgrade, with automatic rollback), ignition (first-boot provisioning), clevis with TPM2 (automatic LUKS unlock), FDO onboarding, usbguard, and Wi-Fi and WWAN support.
 
