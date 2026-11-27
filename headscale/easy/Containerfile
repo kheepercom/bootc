@@ -1,0 +1,15 @@
+FROM us.kheeper.com/bootc/headscale:0
+
+ARG LEGO_VERSION=v5.7.0
+ARG LEGO_SHA256=ffc7f0d75810a70affffb10fc20a8db4d6dd4917f8f88cda9b54fb08c82a1967
+RUN curl -fsSLo /tmp/lego.tar.gz "https://github.com/go-acme/lego/releases/download/${LEGO_VERSION}/lego_${LEGO_VERSION}_linux_amd64.tar.gz" \
+	&& echo "${LEGO_SHA256}  /tmp/lego.tar.gz" | sha256sum -c \
+	&& tar -xzf /tmp/lego.tar.gz -C /usr/bin lego \
+	&& rm /tmp/lego.tar.gz
+
+COPY --chmod=0755 headscale-easy-setup headscale-easy-cert headscale-easy-deploy /usr/libexec/
+COPY headscale-easy.service headscale-easy-cert.service headscale-easy-cert.timer /usr/lib/systemd/system/
+COPY tls.conf /usr/lib/systemd/system/headscale.service.d/tls.conf
+RUN systemctl enable headscale-easy headscale-easy-cert.timer
+
+RUN bootc container lint

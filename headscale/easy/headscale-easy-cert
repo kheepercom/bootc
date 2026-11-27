@@ -1,0 +1,16 @@
+#!/bin/bash
+# Obtains, or renews at half-life, a 6-day Let's Encrypt certificate for the IP
+# headscale-easy-setup recorded. Let's Encrypt only issues IP certificates under
+# the shortlived profile.
+set -euo pipefail
+
+exec /usr/bin/lego run \
+	--accept-tos \
+	--email noreply@kheeper.com \
+	--path /var/lib/lego \
+	--http \
+	--domains "$(cat /var/lib/lego/ip)" \
+	--profile shortlived \
+	--renew-days 3 \
+	--no-random-sleep \
+	--deploy-hook /usr/libexec/headscale-easy-deploy

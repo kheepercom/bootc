@@ -36,19 +36,23 @@ That injects the keys from `https://github.com/<user>.keys` into the image on pu
 The image can be pulled without credentials.
 
 Generate a script from https://kheeper.com/bootc-quickstart to launch on GCP, AWS or bare metal.
-For example, GitHub user "mandi-bt" launching an instance on GCP would look like this.
+For example, launching an instance on GCP looks like this, with your GitHub username in place of `<user>`.
 
 ```sh
 gcloud compute instances create my-headscale-server \
   --image-project kheeper --image-family bootc-quickstart \
   --machine-type c4-standard-2 \
   --boot-disk-size 20GB \
-  --metadata 'bootc-image=us.kheeper.com/bootc/gh/mandi-bt/headscale:0'
+  --tags headscale \
+  --metadata 'bootc-image=us.kheeper.com/bootc/gh/<user>/headscale:0'
+
+gcloud compute firewall-rules create headscale --target-tags headscale \
+  --allow tcp:80,tcp:443,udp:3478
 ```
 
-You'll also need to add firewall-rules and tags to allow ports 80, 443 and 3478/udp.
-
 Then you can `ssh admin@<IP>`, write /etc/headscale/config.yaml, run `sudo systemctl start headscale`, and add users and nodes with `sudo headscale`.
+
+No domain name? [headscale/easy](easy) configures itself for `https://<IP>` with a Let's Encrypt IP certificate.
 
 ## Notes
 

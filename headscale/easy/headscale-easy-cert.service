@@ -1,0 +1,9 @@
+[Unit]
+Description=Renew headscale's Let's Encrypt IP certificate
+Wants=network-online.target
+After=network-online.target
+ConditionPathExists=/etc/headscale/tls/cert.pem
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/headscale-easy-cert

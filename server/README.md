@@ -36,14 +36,14 @@ That injects the keys from `https://github.com/<user>.keys` into the image on pu
 The image can be pulled without credentials.
 
 Generate a script from https://kheeper.com/bootc-quickstart to launch on GCP, AWS or bare metal.
-For example, GitHub user "mandi-bt" launching an instance on GCP would look like this.
+For example, launching an instance on GCP looks like this, with your GitHub username in place of `<user>`.
 
 ```sh
 gcloud compute instances create my-server \
   --image-project kheeper --image-family bootc-quickstart \
   --machine-type c4-standard-2 \
   --boot-disk-size 20GB \
-  --metadata 'bootc-image=us.kheeper.com/bootc/gh/mandi-bt/server:45'
+  --metadata 'bootc-image=us.kheeper.com/bootc/gh/<user>/server:45'
 ```
 
 Then you can `ssh admin@<IP>`.
