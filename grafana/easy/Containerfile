@@ -1,0 +1,9 @@
+FROM us.kheeper.com/bootc/grafana:13
+
+RUN --mount=type=bind,from=lib,target=/mnt/lib /mnt/lib/ipcert/install
+
+COPY --chmod=0755 grafana-easy-setup ip-cert-deploy /usr/libexec/
+COPY grafana-easy.service /usr/lib/systemd/system/
+RUN systemctl enable grafana-easy
+
+RUN bootc container lint

@@ -1,0 +1,15 @@
+#!/bin/bash
+set -euo pipefail
+
+LEGO_VERSION=v5.8.0
+LEGO_SHA256=5c20c9100f3806fda82309753bf7061a9883b231a34bb9548ee817c9c85b297b
+curl -fsSLo /tmp/lego.tar.gz "https://github.com/go-acme/lego/releases/download/${LEGO_VERSION}/lego_${LEGO_VERSION}_linux_amd64.tar.gz"
+echo "${LEGO_SHA256}  /tmp/lego.tar.gz" | sha256sum -c
+tar -xzf /tmp/lego.tar.gz -C /usr/bin lego
+rm /tmp/lego.tar.gz
+
+cd "$(dirname "$0")"
+install -m 0755 ip-cert /usr/libexec/
+install -m 0644 ip-cert.service ip-cert.timer /usr/lib/systemd/system/
+echo 'add element inet server tcp_ports { 80 }' >/usr/lib/nftables/server.d/ip-cert.nft
+systemctl enable ip-cert.service ip-cert.timer

@@ -1,0 +1,15 @@
+FROM us.kheeper.com/bootc/server:45
+
+# bootc pulls the container image before rebooting into an update, so Pi-hole
+# comes back without waiting on Docker Hub.
+ARG VERSION=2026.11.0
+ARG DIGEST=sha256:66c798d79a95c2691f280329c3611dba1746117c61c9f331907ca35a06a52778
+COPY pihole.container /usr/share/containers/systemd/pihole.container
+RUN sed -i "s|@IMAGE@|docker.io/pihole/pihole@${DIGEST}|" /usr/share/containers/systemd/pihole.container \
+	&& ln -s /usr/share/containers/systemd/pihole.container /usr/lib/bootc/bound-images.d/pihole.container
+
+COPY resolved.conf /usr/lib/systemd/resolved.conf.d/pihole.conf
+COPY pihole.tmpfiles /usr/lib/tmpfiles.d/pihole.conf
+COPY pihole.nft /usr/lib/nftables/server.d/pihole.nft
+
+RUN bootc container lint

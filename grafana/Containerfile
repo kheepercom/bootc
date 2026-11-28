@@ -1,0 +1,19 @@
+FROM us.kheeper.com/bootc/server:45
+
+ARG VERSION=13.3.2
+ARG SHA256=e6f06cf4ad96a4809294c2e78d3ebe6bc42a79bff36ffe35eefbe502fc19aa87
+RUN curl -fsSLo /tmp/grafana.tar.gz https://dl.grafana.com/oss/release/grafana-${VERSION}.linux-amd64.tar.gz \
+	&& echo "${SHA256}  /tmp/grafana.tar.gz" | sha256sum -c \
+	&& mkdir /usr/lib/grafana \
+	&& tar -xzf /tmp/grafana.tar.gz -C /usr/lib/grafana --strip-components=1 \
+	&& rm -rf /tmp/grafana.tar.gz /usr/lib/grafana/data \
+	&& ln -s ../lib/grafana/bin/grafana /usr/bin/grafana
+
+COPY grafana.sysusers /usr/lib/sysusers.d/grafana.conf
+COPY grafana.tmpfiles /usr/lib/tmpfiles.d/grafana.conf
+COPY grafana.service /usr/lib/systemd/system/grafana.service
+RUN mkdir -p /etc/grafana/provisioning \
+	&& echo 'add element inet server tcp_ports { 443 }' >/usr/lib/nftables/server.d/grafana.nft \
+	&& systemctl enable grafana
+
+RUN bootc container lint

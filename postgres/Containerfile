@@ -1,0 +1,15 @@
+FROM us.kheeper.com/bootc/server:45
+
+RUN dnf install -y https://download.postgresql.org/pub/repos/yum/reporpms/F-45-x86_64/pgdg-fedora-repo-latest.noarch.rpm \
+	&& dnf install -y postgresql18-server postgresql18-contrib \
+	&& dnf clean all \
+	&& rm -rf /var/lib/dnf /var/lib/pgsql /var/log/* /var/cache/*
+
+COPY postgresql.conf pg_hba.conf pg_ident.conf /etc/postgresql/
+RUN mkdir /etc/postgresql/conf.d
+COPY postgresql.tmpfiles /usr/lib/tmpfiles.d/postgresql-bootc.conf
+COPY bootc.conf /usr/lib/systemd/system/postgresql-18.service.d/bootc.conf
+RUN ln -s postgresql-18.service /usr/lib/systemd/system/postgresql.service \
+	&& systemctl enable postgresql-18
+
+RUN bootc container lint

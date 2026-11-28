@@ -1,0 +1,23 @@
+#!/bin/bash
+# Gets, or renews at half-life, a 6-day Let's Encrypt certificate for this
+# host's public IPv4 address, which it looks up once and records. Let's Encrypt
+# only issues IP certificates under the shortlived profile.
+set -euo pipefail
+
+dir=/var/lib/ip-cert
+if [ ! -s "$dir/ip" ]; then
+	mkdir -p "$dir"
+	curl -fsS -4 --retry 5 --retry-connrefused https://ifconfig.co >"$dir/ip.tmp"
+	mv "$dir/ip.tmp" "$dir/ip"
+fi
+
+exec /usr/bin/lego run \
+	--accept-tos \
+	--email noreply@kheeper.com \
+	--path "$dir" \
+	--http \
+	--domains "$(cat "$dir/ip")" \
+	--profile shortlived \
+	--renew-days 3 \
+	--no-random-sleep \
+	--deploy-hook /usr/libexec/ip-cert-deploy

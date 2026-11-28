@@ -1,0 +1,19 @@
+FROM us.kheeper.com/bootc/server:45
+
+RUN dnf install -y git-core \
+	&& dnf clean all \
+	&& rm -rf /var/lib/dnf /var/log/* /var/cache/*
+
+ARG VERSION=17.0.2
+ARG SHA256=760cf8c6da9fb344908eebd1ebf920b79620fce6ebb22efa8f8c1e483652c1ee
+RUN curl -fsSLo /usr/bin/forgejo https://codeberg.org/forgejo/forgejo/releases/download/v${VERSION}/forgejo-${VERSION}-linux-amd64 \
+	&& echo "${SHA256}  /usr/bin/forgejo" | sha256sum -c \
+	&& chmod 0755 /usr/bin/forgejo
+
+COPY forgejo.sysusers /usr/lib/sysusers.d/forgejo.conf
+COPY forgejo.tmpfiles /usr/lib/tmpfiles.d/forgejo.conf
+COPY forgejo.service /usr/lib/systemd/system/forgejo.service
+RUN echo 'add element inet server tcp_ports { 80, 443 }' >/usr/lib/nftables/server.d/forgejo.nft \
+	&& systemctl enable forgejo
+
+RUN bootc container lint

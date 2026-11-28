@@ -1,0 +1,14 @@
+[Unit]
+Description=Configure Keycloak for this host's public IP
+After=postgresql.service ip-cert.service
+ConditionPathExists=!/etc/keycloak/keycloak.conf
+StartLimitIntervalSec=0
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/keycloak-easy-setup
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

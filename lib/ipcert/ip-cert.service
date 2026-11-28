@@ -1,0 +1,14 @@
+[Unit]
+Description=Let's Encrypt certificate for this host's public IP
+Wants=network-online.target
+After=network-online.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/ip-cert
+Restart=on-failure
+RestartSec=30
+
+[Install]
+WantedBy=multi-user.target

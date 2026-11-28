@@ -1,0 +1,15 @@
+#!/bin/bash
+# Creates the app role and database with a random password and records the URL
+# for connecting to them over TLS at this host's public IP.
+set -euo pipefail
+
+ip=$(cat /var/lib/ip-cert/ip)
+pw=$(head -c 24 /dev/urandom | base64 | tr -d '/+=')
+runuser -u postgres -- psql -v ON_ERROR_STOP=1 -q <<SQL
+SELECT 'CREATE ROLE app LOGIN' WHERE NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'app')\gexec
+ALTER ROLE app PASSWORD '$pw';
+SELECT 'CREATE DATABASE app OWNER app' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'app')\gexec
+SQL
+install -m 0600 /dev/null /etc/postgresql/url.tmp
+echo "postgresql://app:$pw@$ip/app?sslmode=verify-full&sslrootcert=system" >/etc/postgresql/url.tmp
+mv /etc/postgresql/url.tmp /etc/postgresql/url

@@ -1,0 +1,11 @@
+FROM us.kheeper.com/bootc/forgejo:17
+
+RUN --mount=type=bind,from=lib,target=/mnt/lib /mnt/lib/ipcert/install \
+	&& /mnt/lib/postgresql/install
+
+COPY --chmod=0755 forgejo-easy-setup ip-cert-deploy /usr/libexec/
+COPY forgejo-easy.service /usr/lib/systemd/system/
+COPY postgresql.conf /usr/lib/systemd/system/forgejo.service.d/postgresql.conf
+RUN systemctl enable forgejo-easy
+
+RUN bootc container lint

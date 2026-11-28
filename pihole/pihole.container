@@ -1,0 +1,17 @@
+[Unit]
+Description=Pi-hole
+Wants=network-online.target
+After=network-online.target
+
+[Container]
+Image=@IMAGE@
+ContainerName=pihole
+Network=host
+Volume=/var/lib/pihole:/etc/pihole:Z
+AddCapability=SYS_NICE
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

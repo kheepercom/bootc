@@ -1,0 +1,6 @@
+#!/bin/bash
+set -euo pipefail
+
+install -D -m 0640 -g grafana "$LEGO_HOOK_CERT_PATH" /etc/grafana/tls/cert.pem
+install -m 0640 -g grafana "$LEGO_HOOK_CERT_KEY_PATH" /etc/grafana/tls/key.pem
+systemctl restart --no-block grafana

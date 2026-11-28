@@ -1,0 +1,32 @@
+#!/bin/bash
+# Creates Keycloak's database and a config serving https://<public IP> with a
+# temporary admin named admin, then starts Keycloak if the certificate is ready.
+set -euo pipefail
+
+ip=$(cat /var/lib/ip-cert/ip)
+config=/etc/keycloak/keycloak.conf
+db=$(head -c 24 /dev/urandom | base64 | tr -d '/+=')
+
+runuser -u postgres -- psql -v ON_ERROR_STOP=1 -q <<SQL
+SELECT 'CREATE ROLE keycloak LOGIN' WHERE NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'keycloak')\gexec
+ALTER ROLE keycloak PASSWORD '$db';
+SELECT 'CREATE DATABASE keycloak OWNER keycloak' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'keycloak')\gexec
+SQL
+
+install -d -m 0750 -g keycloak /etc/keycloak
+install -m 0640 -g keycloak /dev/null "$config.tmp"
+cat >"$config.tmp" <<CONF
+hostname=https://${ip}
+https-port=443
+https-certificate-file=/etc/keycloak/tls/cert.pem
+https-certificate-key-file=/etc/keycloak/tls/key.pem
+db-url=jdbc:postgresql://localhost/keycloak
+db-username=keycloak
+db-password=${db}
+bootstrap-admin-username=admin
+bootstrap-admin-password=$(head -c 24 /dev/urandom | base64 | tr -d '/+=')
+CONF
+mv "$config.tmp" "$config"
+if [ -f /etc/keycloak/tls/cert.pem ]; then
+	systemctl start --no-block keycloak
+fi

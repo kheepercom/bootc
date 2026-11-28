@@ -1,0 +1,14 @@
+[Unit]
+Description=Configure Grafana for this host's public IP
+After=ip-cert.service
+ConditionPathExists=!/etc/grafana/grafana.ini
+StartLimitIntervalSec=0
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/grafana-easy-setup
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,82 @@
+#!/bin/bash
+# Bumps each pinned upstream release to its newest and commits it.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+# Newest release, by version rather than by date, since several upstreams
+# also patch older lines.
+github() { gh api "repos/$1/releases?per_page=50" --jq '.[] | select(.prerelease or .draft | not) | .tag_name' | sort -V | tail -1; }
+codeberg() { curl -fsS "https://codeberg.org/api/v1/repos/$1/releases?limit=50" | jq -r '.[] | select(.prerelease | not) | .tag_name' | sort -V | tail -1; }
+
+# Prints the sha256 for file $2 in the checksums at URL $1.
+checksum() { curl -fsSL "$1" | awk -v f="$2" '$2 == f { print $1; found = 1 } END { exit !found }'; }
+
+# Reads NAME= or ARG NAME= from a file, or sets it in several.
+var() { sed -nE "s/^(ARG )?$1=//p" "$2"; }
+setvar() { local name=$1 value=$2; shift 2; sed -i -E "s|^((ARG )?$name=).*|\1$value|" "$@"; }
+
+# Moves an app's files from version $2 to $3, along with references to its
+# major.minor and major tags, and commits.
+bump() {
+	local app=$1 old=$2 new=$3
+	local o=${old//./\\.} om=${old%.*} oM=${old%%.*}
+	git ls-files -z "$app" | xargs -0 sed -i -E \
+		-e "s/$o/$new/g" \
+		-e "s#(\`:|$app(/easy)?:)${om//./\\.}([^.0-9]|\$)#\1${new%.*}\3#g" \
+		-e "s#(\`:|$app(/easy)?:)$oM([^.0-9]|\$)#\1${new%%.*}\3#g"
+	git commit -qam "Update $app to $new"
+}
+
+old=$(var VERSION headscale/Containerfile)
+new=$(github juanfont/headscale) new=${new#v}
+if [ "$new" != "$old" ]; then
+	sum=$(checksum "https://github.com/juanfont/headscale/releases/download/v$new/checksums.txt" "headscale_${new}_linux_amd64")
+	setvar SHA256 "$sum" headscale/Containerfile
+	bump headscale "$old" "$new"
+fi
+
+old=$(var VERSION grafana/Containerfile)
+new=$(github grafana/grafana) new=${new#v}
+if [ "$new" != "$old" ]; then
+	sum=$(curl -fsSL "https://dl.grafana.com/oss/release/grafana-$new.linux-amd64.tar.gz.sha256")
+	setvar SHA256 "$sum" grafana/Containerfile
+	bump grafana "$old" "$new"
+fi
+
+old=$(var VERSION forgejo/Containerfile)
+new=$(codeberg forgejo/forgejo) new=${new#v}
+if [ "$new" != "$old" ]; then
+	sum=$(checksum "https://codeberg.org/forgejo/forgejo/releases/download/v$new/forgejo-$new-linux-amd64.sha256" "forgejo-$new-linux-amd64")
+	setvar SHA256 "$sum" forgejo/Containerfile
+	bump forgejo "$old" "$new"
+fi
+
+# Keycloak publishes only a sha1, so pin the sha256 of a tarball that matches it.
+old=$(var VERSION keycloak/Containerfile)
+new=$(github keycloak/keycloak)
+if [ "$new" != "$old" ]; then
+	url="https://github.com/keycloak/keycloak/releases/download/$new/keycloak-$new.tar.gz"
+	tmp=$(mktemp)
+	curl -fsSLo "$tmp" "$url"
+	echo "$(curl -fsSL "$url.sha1")  $tmp" | sha1sum -c --quiet
+	sum=$(sha256sum "$tmp" | cut -d' ' -f1)
+	rm "$tmp"
+	setvar SHA256 "$sum" keycloak/Containerfile
+	bump keycloak "$old" "$new"
+fi
+
+old=$(var VERSION pihole/Containerfile)
+new=$(github pi-hole/docker-pi-hole)
+if [ "$new" != "$old" ]; then
+	digest=$(skopeo inspect --format '{{.Digest}}' "docker://docker.io/pihole/pihole:$new")
+	setvar DIGEST "$digest" pihole/Containerfile
+	bump pihole "$old" "$new"
+fi
+
+new=$(github go-acme/lego)
+if [ "$(var LEGO_VERSION lib/ipcert/install) $(var LEGO_VERSION headscale/easy/Containerfile)" != "$new $new" ]; then
+	sum=$(checksum "https://github.com/go-acme/lego/releases/download/$new/lego_${new#v}_checksums.txt" "lego_${new}_linux_amd64.tar.gz")
+	setvar LEGO_SHA256 "$sum" lib/ipcert/install headscale/easy/Containerfile
+	setvar LEGO_VERSION "$new" lib/ipcert/install headscale/easy/Containerfile
+	git commit -qam "Update lego to $new"
+fi

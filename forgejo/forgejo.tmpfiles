@@ -1,0 +1,6 @@
+d /var/lib/forgejo 0750 git git -
+# Forgejo maintains authorized_keys here for the host's sshd.
+d /var/lib/forgejo/.ssh 0700 git git -
+# Forgejo saves generated secrets into app.ini.
+z /etc/forgejo 0770 root git -
+z /etc/forgejo/app.ini 0660 root git -

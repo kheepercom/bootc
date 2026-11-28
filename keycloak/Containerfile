@@ -1,0 +1,26 @@
+FROM us.kheeper.com/bootc/server:45
+
+RUN dnf install -y java-25-openjdk-headless \
+	&& dnf clean all \
+	&& rm -rf /var/lib/dnf /var/log/* /var/cache/*
+
+# /opt is /var/opt on bootc, so Keycloak lives in /usr and writes only to
+# /var/lib/keycloak.
+ARG VERSION=26.8.2
+ARG SHA256=dd124787283918bc597628887168333465ee2a811a389e0003569e52be7e487f
+ENV JAVA_HOME=/usr/lib/jvm/jre-25
+RUN curl -fsSLo /tmp/keycloak.tar.gz https://github.com/keycloak/keycloak/releases/download/${VERSION}/keycloak-${VERSION}.tar.gz \
+	&& echo "${SHA256}  /tmp/keycloak.tar.gz" | sha256sum -c \
+	&& mkdir /usr/lib/keycloak \
+	&& tar -xzf /tmp/keycloak.tar.gz -C /usr/lib/keycloak --strip-components=1 \
+	&& /usr/lib/keycloak/bin/kc.sh build --db=postgres --cache=local --health-enabled=true --metrics-enabled=true \
+	&& rm -rf /tmp/* /usr/lib/keycloak/data \
+	&& ln -s /var/lib/keycloak /usr/lib/keycloak/data
+
+COPY keycloak.sysusers /usr/lib/sysusers.d/keycloak.conf
+COPY keycloak.tmpfiles /usr/lib/tmpfiles.d/keycloak.conf
+COPY keycloak.service /usr/lib/systemd/system/keycloak.service
+RUN echo 'add element inet server tcp_ports { 443 }' >/usr/lib/nftables/server.d/keycloak.nft \
+	&& systemctl enable keycloak
+
+RUN bootc container lint

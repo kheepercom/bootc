@@ -1,0 +1,14 @@
+[Unit]
+Description=Configure Forgejo for this host's public IP
+After=postgresql.service ip-cert.service
+ConditionPathExists=!/etc/forgejo/app.ini
+StartLimitIntervalSec=0
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/forgejo-easy-setup
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

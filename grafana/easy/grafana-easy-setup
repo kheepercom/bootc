@@ -1,0 +1,28 @@
+#!/bin/bash
+# Writes a config serving Grafana at https://<public IP> with a random admin
+# password and secret key, then starts it if the certificate is ready.
+set -euo pipefail
+
+ip=$(cat /var/lib/ip-cert/ip)
+config=/etc/grafana/grafana.ini
+
+install -m 0640 -g grafana /dev/null "$config.tmp"
+cat >"$config.tmp" <<INI
+[server]
+protocol = https
+http_port = 443
+domain = ${ip}
+root_url = https://${ip}/
+cert_file = /etc/grafana/tls/cert.pem
+cert_key = /etc/grafana/tls/key.pem
+
+[security]
+admin_user = admin
+admin_password = $(head -c 24 /dev/urandom | base64 | tr -d '/+=')
+secret_key = $(head -c 32 /dev/urandom | base64 | tr -d '/+=')
+cookie_secure = true
+INI
+mv "$config.tmp" "$config"
+if [ -f /etc/grafana/tls/cert.pem ]; then
+	systemctl start --no-block grafana
+fi

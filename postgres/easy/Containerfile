@@ -1,0 +1,13 @@
+FROM us.kheeper.com/bootc/postgres:18
+
+RUN --mount=type=bind,from=lib,target=/mnt/lib /mnt/lib/ipcert/install
+
+COPY easy.conf /etc/postgresql/conf.d/easy.conf
+COPY pg_hba.conf /etc/postgresql/pg_hba.conf
+COPY tls.conf /usr/lib/systemd/system/postgresql-18.service.d/tls.conf
+COPY --chmod=0755 postgres-easy-setup ip-cert-deploy /usr/libexec/
+COPY postgres-easy.service /usr/lib/systemd/system/
+RUN echo 'add element inet server tcp_ports { 5432 }' >/usr/lib/nftables/server.d/postgres.nft \
+	&& systemctl enable postgres-easy
+
+RUN bootc container lint

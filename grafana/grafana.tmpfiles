@@ -1,0 +1,2 @@
+d /var/lib/grafana 0750 grafana grafana -
+Z /etc/grafana ~0750 root grafana -

@@ -1,0 +1,11 @@
+FROM us.kheeper.com/bootc/keycloak:26
+
+RUN --mount=type=bind,from=lib,target=/mnt/lib /mnt/lib/ipcert/install \
+	&& /mnt/lib/postgresql/install
+
+COPY --chmod=0755 keycloak-easy-setup ip-cert-deploy /usr/libexec/
+COPY keycloak-easy.service /usr/lib/systemd/system/
+COPY postgresql.conf /usr/lib/systemd/system/keycloak.service.d/postgresql.conf
+RUN systemctl enable keycloak-easy
+
+RUN bootc container lint

@@ -1,0 +1,68 @@
+#!/bin/bash
+# Creates Forgejo's database and a config serving https://<public IP>, with git
+# over the host's sshd, and an admin named root with a random password that must
+# be changed at first login. Starts Forgejo if the certificate is ready.
+set -euo pipefail
+
+ip=$(cat /var/lib/ip-cert/ip)
+config=/etc/forgejo/app.ini
+forgejo() { runuser -u git -- /usr/bin/forgejo --config "$config.tmp" --work-path /var/lib/forgejo "$@"; }
+
+runuser -u postgres -- psql -v ON_ERROR_STOP=1 -q <<'SQL'
+SELECT 'CREATE ROLE git LOGIN' WHERE NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'git')\gexec
+SELECT 'CREATE DATABASE forgejo OWNER git' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'forgejo')\gexec
+SQL
+
+install -d -m 0770 -g git /etc/forgejo
+install -m 0660 -g git /dev/null "$config.tmp"
+cat >"$config.tmp" <<INI
+APP_NAME = Forgejo
+RUN_USER = git
+WORK_PATH = /var/lib/forgejo
+
+[server]
+DOMAIN = ${ip}
+ROOT_URL = https://${ip}/
+SSH_DOMAIN = ${ip}
+PROTOCOL = https
+HTTP_PORT = 443
+CERT_FILE = /etc/forgejo/tls/cert.pem
+KEY_FILE = /etc/forgejo/tls/key.pem
+LFS_START_SERVER = true
+LFS_JWT_SECRET = $(/usr/bin/forgejo generate secret LFS_JWT_SECRET)
+
+[database]
+DB_TYPE = postgres
+HOST = /run/postgresql
+NAME = forgejo
+USER = git
+
+[security]
+INSTALL_LOCK = true
+SECRET_KEY = $(/usr/bin/forgejo generate secret SECRET_KEY)
+INTERNAL_TOKEN = $(/usr/bin/forgejo generate secret INTERNAL_TOKEN)
+
+[oauth2]
+JWT_SECRET = $(/usr/bin/forgejo generate secret JWT_SECRET)
+
+[service]
+DISABLE_REGISTRATION = true
+
+[session]
+COOKIE_SECURE = true
+
+[log]
+MODE = console
+INI
+
+forgejo migrate
+if ! forgejo admin user list --admin | awk 'NR > 1 { print $2 }' | grep -qx root; then
+	pw=$(head -c 24 /dev/urandom | base64 | tr -d '/+=')
+	forgejo admin user create --admin --username root --email root@localhost --password "$pw"
+	install -m 0600 /dev/null /etc/forgejo/root-password
+	echo "$pw" >/etc/forgejo/root-password
+fi
+mv "$config.tmp" "$config"
+if [ -f /etc/forgejo/tls/cert.pem ]; then
+	systemctl start --no-block forgejo
+fi

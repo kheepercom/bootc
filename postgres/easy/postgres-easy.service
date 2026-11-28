@@ -1,0 +1,14 @@
+[Unit]
+Description=Create PostgreSQL's app database
+After=postgresql.service ip-cert.service
+ConditionPathExists=!/etc/postgresql/url
+StartLimitIntervalSec=0
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/postgres-easy-setup
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
