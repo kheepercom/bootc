@@ -38,6 +38,7 @@ derp:
   urls: []
 dns:
   magic_dns: false
+  override_local_dns: false
 YAML
 mv "$config.tmp" "$config"
 systemctl start --no-block headscale
