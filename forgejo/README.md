@@ -76,6 +76,8 @@ gcloud compute firewall-rules create forgejo --target-tags forgejo \
 
 Then you can `ssh admin@<IP>`, write /etc/forgejo/app.ini and run `sudo systemctl start forgejo`.
 
+Run Actions jobs on [forgejo/runner](runner).
+
 No domain name or database? [forgejo/easy](easy) configures itself for `https://<IP>` with a local PostgreSQL and a Let's Encrypt IP certificate.
 
 ## Notes

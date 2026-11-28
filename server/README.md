@@ -21,6 +21,16 @@ We add chrony, iputils, and a default-deny firewall with nftables.
 
 NetworkManager, sshd, chronyd and nftables are enabled.
 
+## SSH
+
+sshd (`/etc/ssh/sshd_config.d/10-server.conf`) allows only public key logins, never as root, with agent, X11 and remote forwarding off, local forwarding only to localhost, and conservative auth and session limits.
+
+## Logs and boot
+
+The journal persists in `/var/log/journal`, capped at 512M and one month.
+
+`network-online.target` waits for one connection rather than every NIC, so a spare unplugged NIC doesn't stall each boot.
+
 ## Derive
 
 **You can't log in yet.** There are no users and root is locked.

@@ -1,0 +1,19 @@
+[Unit]
+Description=Forgejo Runner
+ConditionUser=runner
+ConditionPathExists=/etc/forgejo-runner/config.yml
+Requires=podman.socket
+After=podman.socket
+
+[Service]
+Environment=DOCKER_HOST=unix://%t/podman/podman.sock
+WorkingDirectory=%h
+ExecStart=/usr/bin/forgejo-runner daemon -c /etc/forgejo-runner/config.yml
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=on-failure
+RestartSec=10
+# Let the configured shutdown_timeout finish running jobs.
+TimeoutStopSec=infinity
+
+[Install]
+WantedBy=default.target

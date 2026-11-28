@@ -5,7 +5,7 @@ Bootable OS images for open source software, rebuilt nightly, updated automatica
 | Image | |
 | ----- | - |
 | [server](server) | Minimal Fedora server the others build on |
-| [forgejo](forgejo) ([easy](forgejo/easy)) | Git forge |
+| [forgejo](forgejo) ([easy](forgejo/easy), [runner](forgejo/runner)) | Git forge and Actions runner |
 | [grafana](grafana) ([easy](grafana/easy)) | Dashboards |
 | [headscale](headscale) ([easy](headscale/easy)) | Tailscale control server |
 | [keycloak](keycloak) ([easy](keycloak/easy)) | Identity provider |

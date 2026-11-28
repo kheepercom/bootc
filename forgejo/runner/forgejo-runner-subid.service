@@ -1,0 +1,13 @@
+# Rootless podman needs subordinate IDs, which sysusers doesn't allocate. The
+# range sits well above those useradd hands out.
+[Unit]
+Description=Subordinate IDs for the Forgejo runner's containers
+After=systemd-sysusers.service
+Before=systemd-logind.service
+
+[Service]
+Type=oneshot
+ExecStart=/bin/sh -c 'grep -q ^runner: /etc/subuid || usermod --add-subuids 1000000000-1000065535 --add-subgids 1000000000-1000065535 runner'
+
+[Install]
+WantedBy=multi-user.target

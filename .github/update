@@ -6,7 +6,7 @@ cd "$(dirname "$0")/.."
 # Newest release, by version rather than by date, since several upstreams
 # also patch older lines.
 github() { gh api "repos/$1/releases?per_page=50" --jq '.[] | select(.prerelease or .draft | not) | .tag_name' | sort -V | tail -1; }
-codeberg() { curl -fsS "https://codeberg.org/api/v1/repos/$1/releases?limit=50" | jq -r '.[] | select(.prerelease | not) | .tag_name' | sort -V | tail -1; }
+forgejo() { curl -fsS "https://$1/api/v1/repos/$2/releases?limit=50" | jq -r '.[] | select(.prerelease | not) | .tag_name' | sort -V | tail -1; }
 
 # Prints the sha256 for file $2 in the checksums at URL $1.
 checksum() { curl -fsSL "$1" | awk -v f="$2" '$2 == f { print $1; found = 1 } END { exit !found }'; }
@@ -15,12 +15,13 @@ checksum() { curl -fsSL "$1" | awk -v f="$2" '$2 == f { print $1; found = 1 } EN
 var() { sed -nE "s/^(ARG )?$1=//p" "$2"; }
 setvar() { local name=$1 value=$2; shift 2; sed -i -E "s|^((ARG )?$name=).*|\1$value|" "$@"; }
 
-# Moves an app's files from version $2 to $3, along with references to its
-# major.minor and major tags, and commits.
+# Moves an app's files, and its easy image's but not its other subdirectories',
+# from version $2 to $3, along with references to its major.minor and major
+# tags, and commits.
 bump() {
 	local app=$1 old=$2 new=$3
 	local o=${old//./\\.} om=${old%.*} oM=${old%%.*}
-	git ls-files -z "$app" | xargs -0 sed -i -E \
+	{ git ls-files "$app" | grep -Ev "^$app/[^/]+/"; git ls-files "$app/easy"; } | xargs sed -i -E \
 		-e "s/$o/$new/g" \
 		-e "s#(\`:|$app(/easy)?:)${om//./\\.}([^.0-9]|\$)#\1${new%.*}\3#g" \
 		-e "s#(\`:|$app(/easy)?:)$oM([^.0-9]|\$)#\1${new%%.*}\3#g"
@@ -44,11 +45,19 @@ if [ "$new" != "$old" ]; then
 fi
 
 old=$(var VERSION forgejo/Containerfile)
-new=$(codeberg forgejo/forgejo) new=${new#v}
+new=$(forgejo codeberg.org forgejo/forgejo) new=${new#v}
 if [ "$new" != "$old" ]; then
 	sum=$(checksum "https://codeberg.org/forgejo/forgejo/releases/download/v$new/forgejo-$new-linux-amd64.sha256" "forgejo-$new-linux-amd64")
 	setvar SHA256 "$sum" forgejo/Containerfile
 	bump forgejo "$old" "$new"
+fi
+
+old=$(var VERSION forgejo/runner/Containerfile)
+new=$(forgejo code.forgejo.org forgejo/runner) new=${new#v}
+if [ "$new" != "$old" ]; then
+	sum=$(checksum "https://code.forgejo.org/forgejo/runner/releases/download/v$new/forgejo-runner-$new-linux-amd64.sha256" "forgejo-runner-$new-linux-amd64")
+	setvar SHA256 "$sum" forgejo/runner/Containerfile
+	bump forgejo/runner "$old" "$new"
 fi
 
 # Keycloak publishes only a sha1, so pin the sha256 of a tarball that matches it.

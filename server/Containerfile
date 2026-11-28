@@ -11,6 +11,9 @@ CMD ["/sbin/init"]
 
 COPY server.nft /usr/lib/nftables/server.nft
 COPY nftables.conf /usr/lib/systemd/system/nftables.service.d/server.conf
+COPY sshd.conf /etc/ssh/sshd_config.d/10-server.conf
+COPY journald.conf /usr/lib/systemd/journald.conf.d/10-server.conf
+COPY nm-wait-online.conf /usr/lib/systemd/system/NetworkManager-wait-online.service.d/10-server.conf
 RUN mkdir /usr/lib/nftables/server.d \
 	&& systemctl enable nftables bootc-fetch-apply-updates.timer
 
