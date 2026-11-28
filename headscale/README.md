@@ -8,8 +8,6 @@
 
 - `:0.29` follows headscale patch releases.
 - `:0` also follows minor releases, which may change the config or migrate the database.
-- `:0.29.7` stays on that release but still gets OS updates until the next one.
-- `:0.29.7-YYYYMMDD` never changes.
 
 ## Launch
 

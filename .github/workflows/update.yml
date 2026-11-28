@@ -1,0 +1,49 @@
+name: update
+
+# Bumps pinned upstream releases on main an hour before public's bootc.yml
+# rebuilds, which only promotes after QA passes.
+on:
+  schedule:
+    - cron: '0 12 48 * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - run: |
+          set -euo pipefail
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+
+          # Prints the sha256 of asset $3 from checksums file $2 of release $1.
+          checksum() {
+            curl -fsSL "https://github.com/$1/releases/download/$2" | awk -v f="$3" '$2 == f { print $1; found = 1 } END { exit !found }'
+          }
+
+          old=$(sed -n 's/^ARG VERSION=//p' headscale/Containerfile)
+          new=$(gh api repos/juanfont/headscale/releases/latest --jq .tag_name | sed 's/^v//')
+          if [ "$new" != "$old" ]; then
+            sum=$(checksum juanfont/headscale "v$new/checksums.txt" "headscale_${new}_linux_amd64")
+            sed -i "s/^ARG VERSION=.*/ARG VERSION=$new/; s/^ARG SHA256=.*/ARG SHA256=$sum/" headscale/Containerfile
+            o=${old//./\\.} om=${old%.*}
+            sed -i "s/$o/$new/g; s/${om//./\\.}/${new%.*}/g" headscale/README.md
+            git commit -am "Update headscale to $new"
+          fi
+
+          old=$(sed -n 's/^ARG LEGO_VERSION=//p' headscale/easy/Containerfile)
+          new=$(gh api repos/go-acme/lego/releases/latest --jq .tag_name)
+          if [ "$new" != "$old" ]; then
+            sum=$(checksum go-acme/lego "$new/lego_${new#v}_checksums.txt" "lego_${new}_linux_amd64.tar.gz")
+            sed -i "s/^ARG LEGO_VERSION=.*/ARG LEGO_VERSION=$new/; s/^ARG LEGO_SHA256=.*/ARG LEGO_SHA256=$sum/" headscale/easy/Containerfile
+            git commit -am "Update lego to $new"
+          fi
+
+          git push
